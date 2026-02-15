@@ -1,0 +1,52 @@
+[
+    {
+        "name": "Department Code Null Check",
+        "sql": "SELECT *\nFROM siebel.cx_jrnl_vchr\nWHERE created >= SYSDATE - 1\n  AND (x_d_dep_cd IS NULL OR x_c_dep_cd IS NULL)",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:04:43",
+        "date_modified_on": "2025-11-04 21:04:43",
+        "last_modified_on": "2025-11-05 06:22:05"
+    },
+    {
+        "name": "Duplicate Recycle Order Check",
+        "sql": "SELECT \n    root_order_id, \n    COUNT(*) AS duplicate_count\nFROM siebel.s_order\nWHERE order_type_id = '1-7N9K'\n  AND root_order_id NOT IN (\n        '1-26ONSU_D', '1-U5A-1', '2-SCJ-7', '2-SCJ-8', \n        '2-SCJ-9', '2-SCJ-14', '2-SCJ-16', '2-SCJ-20', \n        '2-SCJ-21', '2-SCJ-22'\n      )\nGROUP BY root_order_id\nHAVING COUNT(*) > 1",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:05:48",
+        "date_modified_on": "2025-11-04 21:05:48"
+    },
+    {
+        "name": "Department Code Mismatch Check",
+        "sql": "SELECT \n    A.ORDER_NUM,\n    D.LOGIN       AS created_by,\n    G.LOGIN       AS posted_by,\n    H.X_D_DEP_CD  AS dep_in_jv,\n    I.LOC         AS poster_dep_cd,\n    C.LOC         AS creator_dep\nFROM SIEBEL.S_ORDER        A\nJOIN SIEBEL.S_CONTACT      B ON A.CREATED_BY = B.ROW_ID\nJOIN SIEBEL.S_ORG_EXT      C ON B.BU_ID = C.PAR_ROW_ID\nJOIN SIEBEL.S_USER         D ON A.CREATED_BY = D.ROW_ID\nJOIN SIEBEL.S_POSTN        F ON A.PR_POSTN_ID = F.PAR_ROW_ID\nJOIN SIEBEL.S_USER         G ON F.PR_EMP_ID = G.ROW_ID\nJOIN (\n        SELECT DISTINCT X_D_PROJ_CD, X_D_DEP_CD\n        FROM SIEBEL.CX_JRNL_VCHR\n        WHERE X_D_PROJ_CD LIKE 'A%' \n          AND X_ORDER_TYPE LIKE '%Sales%' \n          AND CREATED >= SYSDATE - 1\n     ) H ON A.ORDER_NUM = H.X_D_PROJ_CD\nJOIN SIEBEL.S_ORG_EXT      I ON A.BU_ID = I.PAR_ROW_ID\nWHERE A.ORDER_NUM IN (\n        SELECT DISTINCT X_D_PROJ_CD\n        FROM SIEBEL.CX_JRNL_VCHR\n        WHERE X_D_PROJ_CD LIKE 'A%'\n          AND CREATED >= SYSDATE - 1\n     ) AND H.X_D_DEP_CD <> I.LOC",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:06:23",
+        "date_modified_on": "2025-11-04 21:06:23",
+        "last_modified_on": "2025-11-05 06:21:36"
+    },
+    {
+        "name": "Chassis & Body Order Account Code Mismatch Check",
+        "sql": "SELECT ROW_ID, CREATED, X_ORDER_TYPE, X_D_SEG1_CD, X_D_AC_ITM_CD, X_D_SUB_ACITM_CD, X_C_AC_ITM_CD, X_C_SUB_ACITM_CD\nFROM SIEBEL.CX_JRNL_VCHR\nWHERE (x_d_ac_itm_cd = '038' OR x_c_ac_itm_cd = '038')\n  AND (X_ORDER_TYPE LIKE '%Chassis%' or X_ORDER_TYPE LIKE '%Body Building%')\n  AND created >= SYSDATE - 1",
+        "recovery_template": "UPDATE SIEBEL.CX_JRNL_VCHR \nSET X_D_AC_ITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' THEN '031'\n        WHEN X_C_SEG1_CD = 'MDB' THEN '031'\n        WHEN X_C_SEG1_CD = 'HDB' THEN '031'\n        WHEN X_C_SEG1_CD = '1.5t' THEN '030'\n        ELSE X_D_AC_ITM_CD\n        END,\n    X_D_SUB_ACITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' THEN '60'\n        WHEN X_C_SEG1_CD = 'MDB' THEN '50'\n        WHEN X_C_SEG1_CD = 'HDB' THEN '40'\n        WHEN X_C_SEG1_CD = '1.5t' THEN '37'\n        ELSE X_D_SUB_ACITM_CD\n        END,\n    X_C_AC_ITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = 'MDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = 'HDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = '1.5t' AND X_ORDER_TYPE LIKE '%MAP%' THEN '030'\n        ELSE X_C_AC_ITM_CD\n        END,\n    X_C_SUB_ACITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '60'\n        WHEN X_C_SEG1_CD = 'MDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '50'\n        WHEN X_C_SEG1_CD = 'HDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '40'\n        WHEN X_C_SEG1_CD = '1.5t' AND X_ORDER_TYPE LIKE '%MAP%' THEN '37'\n        ELSE X_C_SUB_ACITM_CD\n        END\nWHERE ROW_ID IN ('2-A3RIO9', '2-A3RIO8', '2-A3RIMS', '2-A3RIMR');\n\nSELECT X_D_AC_ITM_CD, X_D_SUB_ACITM_CD, X_C_AC_ITM_CD, X_C_SUB_ACITM_CD, X_C_SEG1_CD, X_ORDER_TYPE FROM SIEBEL.CX_JRNL_VCHR WHERE ROW_ID IN ('2-A3RIO9', '2-A3RIO8', '2-A3RIMS', '2-A3RIMR');",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:07:07",
+        "date_modified_on": "2025-12-09 22:27:20"
+    },
+    {
+        "name": "Data Set Separator Issue",
+        "sql": "WITH DistinctAbstracts AS (\n    SELECT \n        x_voucher_abstract, \n        X_ABSTRACT, \n        CREATED\n    FROM SIEBEL.CX_JRNL_VCHR\n    WHERE X_D_PROJ_CD LIKE 'PT%'\n      AND X_ORDER_TYPE LIKE 'Parts Sales%'\n      AND CREATED >= SYSDATE - 1\n),\n\nSameCreatedPairs AS (\n    SELECT da1.x_voucher_abstract\n    FROM DistinctAbstracts da1\n    JOIN DistinctAbstracts da2\n      ON da1.x_voucher_abstract = da2.x_voucher_abstract\n     AND da1.X_ABSTRACT <> da2.X_ABSTRACT\n     AND da1.CREATED = da2.CREATED\n    GROUP BY da1.x_voucher_abstract\n)\n\nSELECT \n    scp.x_voucher_abstract,\n    COUNT(DISTINCT da.X_ABSTRACT) AS distinct_abstract_count\nFROM SameCreatedPairs scp\nJOIN DistinctAbstracts da \n  ON scp.x_voucher_abstract = da.x_voucher_abstract\nGROUP BY scp.x_voucher_abstract\nHAVING COUNT(DISTINCT da.X_ABSTRACT) >= 2",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 22:47:42",
+        "date_modified_on": "2025-11-05 06:26:05"
+    },
+    {
+        "name": "Null Tax Percent In Quote",
+        "sql": "SELECT A.ROW_ID, A.STAT_CD, A.X_PRODUCT_CLASS, B.TAX_PERCENT, C.ATTRIB_13 FROM SIEBEL.S_DOC_QUOTE A, SIEBEL.S_DOC_ORDER B, SIEBEL.S_DOC_QUOTE_X C WHERE A.ROW_ID = C.ROW_ID AND A.DISPLAY_TYPE_CD = 'NV Sales Quote' AND A.STAT_CD NOT IN ('In Progress', 'Cancelled', 'Customer Rejected') AND A.ROW_ID = B.ROW_ID AND B.TAX_PERCENT IS NULL",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-13 18:33:42",
+        "date_modified_on": "2025-11-13 18:37:22"
+    }
+]
