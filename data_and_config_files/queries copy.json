@@ -1,0 +1,112 @@
+[
+    {
+        "name": "Department Code Null Check",
+        "sql": "SELECT *\nFROM siebel.cx_jrnl_vchr\nWHERE created >= SYSDATE - 1\n  AND (x_d_dep_cd IS NULL OR x_c_dep_cd IS NULL)",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:04:43",
+        "date_modified_on": "2025-11-04 21:04:43",
+        "last_modified_on": "2025-11-05 06:22:05",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Duplicate Recycle Order Check",
+        "sql": "SELECT \n    root_order_id, \n    COUNT(*) AS duplicate_count\nFROM siebel.s_order\nWHERE order_type_id in ('1-7N9K')\n  AND root_order_id NOT IN (\n        '1-26ONSU_D', '1-U5A-1', '2-SCJ-7', '2-SCJ-8', \n        '2-SCJ-9', '2-SCJ-14', '2-SCJ-16', '2-SCJ-20', \n        '2-SCJ-21', '2-SCJ-22'\n      )\nGROUP BY root_order_id\nHAVING COUNT(*) > 1",
+        "recovery_template": "SELECT A.STATUS_CD, A.ROOT_ORDER_ID, A.PAR_ORDER_ID, A.X_VEHICLE_ID, A.DB_LAST_UPD, A.CREATED, B.ORDER_NUM, B.STATUS_CD\nFROM SIEBEL.S_ORDER A, SIEBEL.S_ORDER B \nWHERE \nA.ORDER_TYPE_ID = '1-7N9K' AND A.ROOT_ORDER_ID = '1-7VIK-1' AND\nA.PAR_ORDER_ID = B.ROW_ID;\n\nUPDATE SIEBEL.S_ORDER SET DB_LAST_UPD = SYSDATE, STATUS_CD = Cancelled, ROOT_ORDER_ID = ROOT_ORDER_ID || '_DUMMY', PAR_ORDER_ID = PAR_ORDER_ID || '_DUMMY', X_VEHICLE_ID = X_VEHICLE_ID || '_DUMMY' WHERE ROW_ID = '';\nSELECT X_SALES_ORDER_ID, ORDER_ID FROM SIEBEL.S_ORDER_ITEM WHERE ORDER_ID = '1-3NUL-1';\nUPDATE SIEBEL.S_ORDER_ITEM SET DB_LAST_UPD = SYSDATE, X_SALES_ORDER_ID = X_SALES_ORDER_ID || '_DUMMY' WHERE ORDER_ID = '';",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:05:48",
+        "date_modified_on": "2026-03-02 21:33:31",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Department Code Mismatch Check",
+        "sql": "SELECT \n    A.ORDER_NUM,\n    D.LOGIN       AS created_by,\n    G.LOGIN       AS posted_by,\n    H.X_D_DEP_CD  AS dep_in_jv,\n    I.LOC         AS poster_dep_cd,\n    C.LOC         AS creator_dep\nFROM SIEBEL.S_ORDER        A\nJOIN SIEBEL.S_CONTACT      B ON A.CREATED_BY = B.ROW_ID\nJOIN SIEBEL.S_ORG_EXT      C ON B.BU_ID = C.PAR_ROW_ID\nJOIN SIEBEL.S_USER         D ON A.CREATED_BY = D.ROW_ID\nJOIN SIEBEL.S_POSTN        F ON A.PR_POSTN_ID = F.PAR_ROW_ID\nJOIN SIEBEL.S_USER         G ON F.PR_EMP_ID = G.ROW_ID\nJOIN (\n        SELECT DISTINCT X_D_PROJ_CD, X_D_DEP_CD\n        FROM SIEBEL.CX_JRNL_VCHR\n        WHERE X_D_PROJ_CD LIKE 'A%' \n          AND X_ORDER_TYPE LIKE '%Sales%' \n          AND CREATED >= SYSDATE - 1\n     ) H ON A.ORDER_NUM = H.X_D_PROJ_CD\nJOIN SIEBEL.S_ORG_EXT      I ON A.BU_ID = I.PAR_ROW_ID\nWHERE A.ORDER_NUM IN (\n        SELECT DISTINCT X_D_PROJ_CD\n        FROM SIEBEL.CX_JRNL_VCHR\n        WHERE X_D_PROJ_CD LIKE 'A%'\n          AND CREATED >= SYSDATE - 1\n     ) AND H.X_D_DEP_CD <> I.LOC",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:06:23",
+        "date_modified_on": "2025-11-04 21:06:23",
+        "last_modified_on": "2025-11-05 06:21:36",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Chassis & Body Order Account Code Mismatch Check",
+        "sql": "SELECT ROW_ID, CREATED, X_ORDER_TYPE, X_D_SEG1_CD, X_D_AC_ITM_CD, X_D_SUB_ACITM_CD, X_C_AC_ITM_CD, X_C_SUB_ACITM_CD\nFROM SIEBEL.CX_JRNL_VCHR\nWHERE (x_d_ac_itm_cd = '038' OR x_c_ac_itm_cd = '038')\n  AND (X_ORDER_TYPE LIKE '%Chassis%' or X_ORDER_TYPE LIKE '%Body Building%')\n  AND created >= SYSDATE - 1",
+        "recovery_template": "UPDATE SIEBEL.CX_JRNL_VCHR \nSET X_D_AC_ITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' THEN '031'\n        WHEN X_C_SEG1_CD = 'MDB' THEN '031'\n        WHEN X_C_SEG1_CD = 'HDB' THEN '031'\n        WHEN X_C_SEG1_CD = '1.5t' THEN '030'\n        WHEN X_C_SEG1_CD = 'LDT' THEN '030'\n        WHEN X_C_SEG1_CD = 'MDT' THEN '030'\n        WHEN X_C_SEG1_CD = 'HDT' THEN '030'\n        ELSE X_D_AC_ITM_CD\n        END,\n    X_D_SUB_ACITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' THEN '60'\n        WHEN X_C_SEG1_CD = 'MDB' THEN '50'\n        WHEN X_C_SEG1_CD = 'HDB' THEN '40'\n        WHEN X_C_SEG1_CD = '1.5t' THEN '37'\n        WHEN X_C_SEG1_CD = 'LDT' THEN '30'\n        WHEN X_C_SEG1_CD = 'MDT' THEN '20'\n        WHEN X_C_SEG1_CD = 'HDT' THEN '10'\n        ELSE X_D_SUB_ACITM_CD\n        END,\n    X_C_AC_ITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = 'MDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = 'HDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '031'\n        WHEN X_C_SEG1_CD = '1.5t' AND X_ORDER_TYPE LIKE '%MAP%' THEN '030'\n        WHEN X_C_SEG1_CD = 'LDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '030'\n        WHEN X_C_SEG1_CD = 'MDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '030'\n        WHEN X_C_SEG1_CD = 'HDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '030'\n        ELSE X_C_AC_ITM_CD\n        END,\n    X_C_SUB_ACITM_CD = CASE \n        WHEN X_C_SEG1_CD = 'LDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '60'\n        WHEN X_C_SEG1_CD = 'MDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '50'\n        WHEN X_C_SEG1_CD = 'HDB' AND X_ORDER_TYPE LIKE '%MAP%' THEN '40'\n        WHEN X_C_SEG1_CD = '1.5t' AND X_ORDER_TYPE LIKE '%MAP%' THEN '37'\n        WHEN X_C_SEG1_CD = 'LDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '30'\n        WHEN X_C_SEG1_CD = 'MDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '20'\n        WHEN X_C_SEG1_CD = 'HDT' AND X_ORDER_TYPE LIKE '%MAP%' THEN '10'\n        ELSE X_C_SUB_ACITM_CD\n        END\nWHERE ROW_ID IN ('1-2WJYXB');\n\nSELECT X_D_AC_ITM_CD, X_D_SUB_ACITM_CD, X_C_AC_ITM_CD, X_C_SUB_ACITM_CD, X_C_SEG1_CD, X_ORDER_TYPE FROM SIEBEL.CX_JRNL_VCHR \nWHERE ROW_ID IN ('1-2WJYXB');\n ",
+        "active": "Y",
+        "date_added_on": "2025-11-04 21:07:07",
+        "date_modified_on": "2025-12-09 22:27:20",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Data Set Separator Issue",
+        "sql": "WITH DistinctAbstracts AS (\n    SELECT \n        x_voucher_abstract, \n        X_ABSTRACT, \n        CREATED\n    FROM SIEBEL.CX_JRNL_VCHR\n    WHERE X_D_PROJ_CD LIKE 'PT%'\n      AND X_ORDER_TYPE LIKE 'Parts Sales%'\n      AND CREATED >= SYSDATE - 1\n),\n\nSameCreatedPairs AS (\n    SELECT da1.x_voucher_abstract\n    FROM DistinctAbstracts da1\n    JOIN DistinctAbstracts da2\n      ON da1.x_voucher_abstract = da2.x_voucher_abstract\n     AND da1.X_ABSTRACT <> da2.X_ABSTRACT\n     AND da1.CREATED = da2.CREATED\n    GROUP BY da1.x_voucher_abstract\n)\n\nSELECT \n    scp.x_voucher_abstract,\n    COUNT(DISTINCT da.X_ABSTRACT) AS distinct_abstract_count\nFROM SameCreatedPairs scp\nJOIN DistinctAbstracts da \n  ON scp.x_voucher_abstract = da.x_voucher_abstract\nGROUP BY scp.x_voucher_abstract\nHAVING COUNT(DISTINCT da.X_ABSTRACT) >= 2",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2025-11-04 22:47:42",
+        "date_modified_on": "2025-11-05 06:26:05",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Com Inbox Daily Recovery",
+        "sql": "select\nc.name \"Name\",\nd.login,\nb.name \"Type\",\na.status_cd,\ne.status,\na.row_id,\na.created,\na.last_upd,\na.active_flg,\ne.last_upd\nfrom\nsiebel.S_UNVBX_ITMTASK a,\nsiebel.S_UNVBX_ITMTYPE b,\nsiebel.S_UNVBX_ITEM c,\nsiebel.S_USER d,\nsiebel.CX_apr_hst_xm e\nwhere\nc.UNVBX_ITMTYPE_ID = b.row_id(+)\nand a.UNVBX_ITEM_ID = c.row_id(+)\nand a.APPROVER_ID = d.row_id(+)\nand a.unvbx_item_id = e.INBOXITEM_ID(+)\nand b.type_cd = 'Approvals'\nand e.status <> 'Pending for Approval'\nand a.active_flg = 'Y'\n--and c.name in ('1-4NERWAR','1-4IVCWF6')\norder by a.last_upd desc",
+        "recovery_template": "update SIEBEL.s_unvbx_itmtask set active_flg = 'N',db_last_upd = sysdate where row_id in ('','');",
+        "active": "Y",
+        "date_added_on": "2026-01-26 21:02:51",
+        "date_modified_on": "2026-01-26 21:02:51",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "PO to WH",
+        "sql": "select T1.ROW_ID, T1.SHIP_NUM, T2.ORDER_NUM, T4.X_PRINT_STATUS , t1.CREATED\nfrom siebel.S_SHIPMENT T1, siebel.S_ORDER T2, siebel.S_INVLOC T3, siebel.CX_SHIPMENT_X T4\nwhere T1.PR_ORDER_ID = T2.ROW_ID and T2.X_INVENTORY_ID = T3.ROW_ID \nand T3.X_SHOP_CODE in ('10TW','10UW') and T2.X_PARTS_PO_REF = 'PO To WH'\nand T1.ROW_ID = T4.PAR_ROW_ID\nand T4.X_PRINT_STATUS LIKE 'Error%'\nand T1.CREATED>=SYSDATE -1",
+        "recovery_template": "select * from siebel.S_SRM_DATA WHERE DATA_VAL LIKE '%2-AVYC36%';\nSELECT ROW_ID FROM SIEBEL.S_SHIPMENT WHERE SHIP_NUM = 'O050372879';\nSELECT * FROM SIEBEL.S_SRM_REQUEST WHERE ROW_ID = '2-AVYC3B';",
+        "active": "Y",
+        "date_added_on": "2026-02-10 14:26:59",
+        "date_modified_on": "2026-02-22 05:06:36",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "BB IBOS Cons Tax Null",
+        "sql": "select order_num, status_cd, created, x_consumption_tax, TAX_EXEMPT_FLG from siebel.s_order where order_type_id = '1-7N9I' \nand x_consumption_tax is null and status_cd not in ('Cancelled', 'Pending', 'Pending Approval') order by created desc",
+        "recovery_template": "WITH LINE_ITEM_SUM AS\n(\n    SELECT \n    SUM\n    ( \n        CASE \n            WHEN OI.PAR_ORDER_ITEM_ID IS NULL AND \n                CASE \n                    WHEN PI.PROD_TYPE_CD = 'Bundle' THEN 'Y'\n                    ELSE 'N'\n                END <> 'Y' \n            THEN NVL(OI.ADJ_UNIT_PRI, OI.NET_PRI * OI.EXTD_QTY)\n            ELSE 0.0\n        END\n    ) AS TOTAL_LINE_ITEM_SUM,\n    O.ORDER_NUM AS ORD_NUM\n    FROM \n    SIEBEL.S_ORDER O,\n    SIEBEL.S_ORDER_ITEM OI,\n    SIEBEL.S_ORDER_ITEM OI2,\n    SIEBEL.S_PROD_INT PI\n    \n    WHERE \n    O.ROW_ID = OI.ORDER_ID AND\n    OI.ROOT_ORDER_ITEM_ID = OI2.ROW_ID AND\n    OI2.PROD_ID = PI.ROW_ID AND\n    O.ORDER_NUM IN ('B050678486', 'B050677780', 'B050677756', 'B050677757', 'B050677743', 'B050677735', 'B050677716', 'B050676935', 'B050676776', 'B050673211', 'B050673201', 'B050673193', 'B050673180', 'B050673162', 'B050673158', 'B050673132', 'B050673131', 'B050673117', 'B050673109', 'B050672346', 'B050672053', 'B050672052', 'B050672051')\n    \n    GROUP BY\n    O.ORDER_NUM, OI.ORDER_ID\n)\n\nSELECT\n(\n NVL(O.TAX_PERCENT, 0) * NVL\n (\n  LIS.TOTAL_LINE_ITEM_SUM, \n  0.0\n ) / 100\n) CONSTAX,\nLIS.ORD_NUM-- +\n\n--CASE \n-- WHEN CM.ROUND_OFF = 'Up' THEN 0.99\n-- WHEN CM.ROUND_OFF = 'Off' THEN 0.5\n-- ELSE 0\n--END AS CONS_TAX\n  \nFROM \nLINE_ITEM_SUM LIS,\nSIEBEL.S_ORDER O\n--SIEBEL.CX_CUSTOMMASTER CM\n\nWHERE \n--CM.TYPE = 'Consumption Tax' AND\nO.ORDER_NUM = LIS.ORD_NUM;\n\nMERGE INTO SIEBEL.S_ORDER A\nUSING \n(\nWITH LINE_ITEM_SUM AS\n(\n    SELECT \n    SUM\n    ( \n        CASE \n            WHEN OI.PAR_ORDER_ITEM_ID IS NULL AND \n                CASE \n                    WHEN PI.PROD_TYPE_CD = 'Bundle' THEN 'Y'\n                    ELSE 'N'\n                END <> 'Y' \n            THEN NVL(OI.ADJ_UNIT_PRI, OI.NET_PRI * OI.EXTD_QTY)\n            ELSE 0.0\n        END\n    ) AS TOTAL_LINE_ITEM_SUM,\n    O.ORDER_NUM AS ORD_NUM\n    FROM \n    SIEBEL.S_ORDER O,\n    SIEBEL.S_ORDER_ITEM OI,\n    SIEBEL.S_ORDER_ITEM OI2,\n    SIEBEL.S_PROD_INT PI\n    \n    WHERE \n    O.ROW_ID = OI.ORDER_ID AND\n    OI.ROOT_ORDER_ITEM_ID = OI2.ROW_ID AND\n    OI2.PROD_ID = PI.ROW_ID AND\n    O.ORDER_NUM IN ('B050678486', 'B050677780', 'B050677756', 'B050677757', 'B050677743', 'B050677735', 'B050677716', 'B050676935', 'B050676776', 'B050673211', 'B050673201', 'B050673193', 'B050673180', 'B050673162', 'B050673158', 'B050673132', 'B050673131', 'B050673117', 'B050673109', 'B050672346', 'B050672053', 'B050672052', 'B050672051')\n    \n    GROUP BY\n    O.ORDER_NUM, OI.ORDER_ID\n)\n\nSELECT\n(\n NVL(O.TAX_PERCENT, 0) * NVL\n (\n  LIS.TOTAL_LINE_ITEM_SUM, \n  0.0\n ) / 100\n) CONSTAX,\nLIS.ORD_NUM-- +\n\n--CASE \n-- WHEN CM.ROUND_OFF = 'Up' THEN 0.99\n-- WHEN CM.ROUND_OFF = 'Off' THEN 0.5\n-- ELSE 0\n--END AS CONS_TAX\n  \nFROM \nLINE_ITEM_SUM LIS,\nSIEBEL.S_ORDER O\n--SIEBEL.CX_CUSTOMMASTER CM\n\nWHERE \n--CM.TYPE = 'Consumption Tax' AND\nO.ORDER_NUM = LIS.ORD_NUM\n) O\nON (A.ORDER_NUM = O.ORD_NUM)\nWHEN MATCHED THEN\nUPDATE SET\n    A.X_CONSUMPTION_TAX = O.CONSTAX;",
+        "active": "Y",
+        "date_added_on": "2026-03-02 21:26:52",
+        "date_modified_on": "2026-03-11 21:47:26",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Duplicate Pool Cost Order Check",
+        "sql": "SELECT \n    root_order_id, \n    COUNT(*) AS duplicate_count\nFROM siebel.s_order\nWHERE order_type_id in ('1-7N8X')\nGROUP BY root_order_id\nHAVING COUNT(*) > 1",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2026-03-31 22:43:27",
+        "date_modified_on": "2026-03-31 22:43:27",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Duplicate Planned Pool Cost-Procurement Order Check",
+        "sql": "SELECT \n    root_order_id, \n    COUNT(*) AS duplicate_count\nFROM siebel.s_order\nWHERE order_type_id in ('1-7N9Q')\nAND ROOT_ORDER_ID IS NOT NULL \nAND (ROOT_ORDER_ID NOT IN ('DUMMY-2-7AC3VK', '2-8346-1_dummy', 'DUMMY-2-7BAYGM', 'DUMMY-1-2BNSE3', 'DUMMY-1-3QV3-2'))\nGROUP BY root_order_id\nHAVING COUNT(*) > 1",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2026-03-31 22:43:59",
+        "date_modified_on": "2026-03-31 22:46:32",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Duplicate Planned Pool Cost - Shipment Order Check",
+        "sql": "SELECT \n    root_order_id, \n    COUNT(*) AS duplicate_count\nFROM siebel.s_order\nWHERE order_type_id in ('1-7N9R')\nAND ROOT_ORDER_ID IS NOT NULL \nGROUP BY root_order_id\nHAVING COUNT(*) > 1",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2026-03-31 22:44:37",
+        "date_modified_on": "2026-03-31 22:44:37",
+        "auto_recovery": "N"
+    },
+    {
+        "name": "Duplicate Chassis Order Check",
+        "sql": "SELECT X_VEHICLE_ID, COUNT(*) AS duplicate_count\nFROM SIEBEL.S_ORDER \nWHERE ORDER_TYPE_ID = '1-7N8N'\nAND X_VEHICLE_ID IS NOT NULL \nGROUP BY X_VEHICLE_ID\nHAVING COUNT(*) > 1",
+        "recovery_template": "No Recovery Template",
+        "active": "Y",
+        "date_added_on": "2026-03-31 22:45:04",
+        "date_modified_on": "2026-03-31 22:45:04",
+        "auto_recovery": "N"
+    }
+]

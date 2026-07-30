@@ -26,6 +26,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
+	a.binaries,
+    a.datas,
     [],
     exclude_binaries=True,
     name='Daily Monitoring',
@@ -40,13 +42,4 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['assets\\app_icon.png'],
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='Daily Monitoring',
 )

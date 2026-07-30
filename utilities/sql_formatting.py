@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPlainTextEdit
-from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QDialog
+from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QTextCursor
 from PyQt5.QtCore import Qt, QRegExp
+from utilities.stylesheets import StylingManager
 import sys
 
 
@@ -71,3 +72,55 @@ class SqlPreview(QMainWindow):
         self.highlighter = SqlHighlighter(editor.document())
 
         self.setCentralWidget(editor)
+
+class SqlPreviewV2(QDialog):
+    def __init__(self, sql_text, mode, edit_func = None, save_func = None, parent = None):
+        super().__init__(parent)
+
+        self.setWindowTitle("SQL Preview")
+        self.resize(700, 500)
+
+        self.styling_manager = StylingManager()
+        self.edit_func = edit_func
+        self.save_func = save_func
+        self.sql_text = sql_text
+        self.mode = mode
+        self.active = False
+
+        self.editor = QPlainTextEdit()
+        self.editor.setPlainText(sql_text)
+        self.editor.setStyleSheet("QPlainTextEdit { background-color: #f9f9f9; color: #222; }")
+        self.editor.setFont(QFont("Consolas", 11))
+        
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.editor)
+        self.layout_bridge = layout
+        self.highlighter = SqlHighlighter(self.editor.document())
+
+    def preview_mode(self):
+        self.editor.setReadOnly(True)
+        edit_btn = QPushButton('Edit')
+        edit_btn.setStyleSheet(self.styling_manager.button_style())
+        edit_btn.clicked.connect(lambda : self.edit_func(self.sql_text, self.mode))
+        btn_bar_layout = QHBoxLayout()
+        btn_bar_layout.addWidget(edit_btn)
+        self.layout_bridge.addLayout(btn_bar_layout)
+        self.active = True
+        self.show()
+    
+    def edit_mode(self):
+        self.editor.setReadOnly(False)
+        save_btn = QPushButton('Save Changes')
+        save_btn.setStyleSheet(self.styling_manager.button_style())
+        save_btn.clicked.connect(lambda _ : self.handle_save(self.mode))
+        btn_bar_layout = QHBoxLayout()
+        btn_bar_layout.addWidget(save_btn)
+        self.layout_bridge.addLayout(btn_bar_layout)
+        self.active = True
+        self.show()
+
+    def handle_save(self, mode):
+        text = self.editor.toPlainText()
+        self.save_func(text, mode)
+
+        

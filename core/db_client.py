@@ -7,21 +7,33 @@ class DBClient:
         self.password = password
         self.dsn = dsn
         self.conn = None
+        self.pool = self.get_pool()
+
+    def get_pool(self):
+        pool = oracledb.create_pool(
+            user=self.user,
+            password=self.password,
+            dsn=self.dsn,
+            min=2,
+            max=10,
+            increment=1,
+            timeout=60
+        )
+        return pool
 
     def connect(self):
         self.conn = oracledb.connect(user=self.user, password=self.password, dsn=self.dsn)
 
     def execute_select(self, sql, bind_vars=None):
-        cursor = self.conn.cursor()
-        try:
-            if bind_vars:
-                cursor.execute(sql, bind_vars)
-            else:
-                cursor.execute(sql)
-            cols = [col[0] for col in cursor.description]
-            return [dict(zip(cols,row)) for row in cursor.fetchall()]
-        finally:
-            cursor.close()
+        with self.pool.acquire() as conn:
+            #conn.call_timeout = 30000
+            with conn.cursor() as cursor:
+                if bind_vars:
+                    cursor.execute(sql, bind_vars)
+                else:
+                    cursor.execute(sql)
+                cols = [col[0] for col in cursor.description]
+                return [dict(zip(cols,row)) for row in cursor.fetchall()]
 
     def execute_dml(self, sql, bind_vars):
         cursor = self.conn.cursor()
@@ -40,3 +52,4 @@ class DBClient:
     def close(self):
         self.conn.close()
 
+   
