@@ -19,26 +19,26 @@
     },
     {
         "name": "Iwate",
-        "user": "ATUYADA",
-        "password": "NewYear@2026",
+        "user": "READUSER",
+        "password": "READUSER",
         "dsn": "SIEBFDPI"
     },
     {
         "name": "Shikoku",
-        "user": "ATUYADA",
-        "password": "NewYear@2026",
+        "user": "READUSER",
+        "password": "READUSER",
         "dsn": "SIEBFDPS"
     },
     {
         "name": "Okinawa",
-        "user": "ATUYADA",
-        "password": "NewYear@2026",
+        "user": "READUSER",
+        "password": "READUSER",
         "dsn": "SIEBFDPN"
     },
     {
         "name": "Wakayama",
-        "user": "ATUYADA",
-        "password": "NewYear@2026",
+        "user": "READUSER",
+        "password": "READUSER",
         "dsn": "SIEBFDPW"
     },
     {

@@ -1,0 +1,61 @@
+2026-09-03 18:44:30,311 | INFO | MainThread | __main__ | app.py:15  | Application Started
+2026-09-03 18:44:30,474 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Aomori pool OK
+2026-09-03 18:44:30,504 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Okayama pool OK
+2026-09-03 18:44:30,548 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Hakodate pool OK
+2026-09-03 18:44:32,968 | ERROR | MainThread | core.managers.connection_manager | connection_manager.py:104  | Iwate pool FAILED: ORA-01017: invalid username/password; logon denied
+Help: https://docs.oracle.com/error-help/db/ora-01017/
+Traceback (most recent call last):
+  File "core\managers\connection_manager.py", line 96, in test_pool
+  File "oracledb\pool.py", line 428, in acquire
+  File "oracledb\connection.py", line 1768, in connect
+  File "oracledb\connection.py", line 889, in __init__
+  File "src/oracledb/impl/thin/pool.pyx", line 637, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "src/oracledb/impl/thin/pool.pyx", line 643, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "src/oracledb/impl/thin/pool.pyx", line 639, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "threading.py", line 395, in wait_for
+  File "src/oracledb/impl/thin/pool.pyx", line 950, in oracledb.thin_impl.PooledConnRequest.fulfill
+  File "src/oracledb/impl/thin/pool.pyx", line 602, in oracledb.thin_impl.ThinPoolImpl._process_request
+  File "src/oracledb/impl/thin/pool.pyx", line 575, in oracledb.thin_impl.ThinPoolImpl._create_conn_impl
+  File "src/oracledb/impl/thin/connection.pyx", line 544, in oracledb.thin_impl.ThinConnImpl.connect
+  File "src/oracledb/impl/thin/connection.pyx", line 540, in oracledb.thin_impl.ThinConnImpl.connect
+  File "src/oracledb/impl/thin/connection.pyx", line 482, in oracledb.thin_impl.ThinConnImpl._connect_with_params
+  File "src/oracledb/impl/thin/connection.pyx", line 463, in oracledb.thin_impl.ThinConnImpl._connect_with_description
+  File "src/oracledb/impl/thin/connection.pyx", line 432, in oracledb.thin_impl.ThinConnImpl._connect_with_address
+  File "src/oracledb/impl/thin/protocol.pyx", line 368, in oracledb.thin_impl.Protocol._connect_phase_two
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-01017: invalid username/password; logon denied
+Help: https://docs.oracle.com/error-help/db/ora-01017/
+2026-09-03 18:44:35,371 | ERROR | MainThread | core.managers.connection_manager | connection_manager.py:104  | Shikoku pool FAILED: ORA-01017: invalid username/password; logon denied
+Help: https://docs.oracle.com/error-help/db/ora-01017/
+Traceback (most recent call last):
+  File "core\managers\connection_manager.py", line 96, in test_pool
+  File "oracledb\pool.py", line 428, in acquire
+  File "oracledb\connection.py", line 1768, in connect
+  File "oracledb\connection.py", line 889, in __init__
+  File "src/oracledb/impl/thin/pool.pyx", line 637, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "src/oracledb/impl/thin/pool.pyx", line 643, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "src/oracledb/impl/thin/pool.pyx", line 639, in oracledb.thin_impl.ThinPoolImpl.acquire
+  File "threading.py", line 395, in wait_for
+  File "src/oracledb/impl/thin/pool.pyx", line 950, in oracledb.thin_impl.PooledConnRequest.fulfill
+  File "src/oracledb/impl/thin/pool.pyx", line 602, in oracledb.thin_impl.ThinPoolImpl._process_request
+  File "src/oracledb/impl/thin/pool.pyx", line 575, in oracledb.thin_impl.ThinPoolImpl._create_conn_impl
+  File "src/oracledb/impl/thin/connection.pyx", line 544, in oracledb.thin_impl.ThinConnImpl.connect
+  File "src/oracledb/impl/thin/connection.pyx", line 540, in oracledb.thin_impl.ThinConnImpl.connect
+  File "src/oracledb/impl/thin/connection.pyx", line 482, in oracledb.thin_impl.ThinConnImpl._connect_with_params
+  File "src/oracledb/impl/thin/connection.pyx", line 463, in oracledb.thin_impl.ThinConnImpl._connect_with_description
+  File "src/oracledb/impl/thin/connection.pyx", line 432, in oracledb.thin_impl.ThinConnImpl._connect_with_address
+  File "src/oracledb/impl/thin/protocol.pyx", line 368, in oracledb.thin_impl.Protocol._connect_phase_two
+  File "src/oracledb/impl/thin/protocol.pyx", line 494, in oracledb.thin_impl.Protocol._process_message
+  File "src/oracledb/impl/thin/messages/base.pyx", line 102, in oracledb.thin_impl.Message._check_and_raise_exception
+oracledb.exceptions.DatabaseError: ORA-01017: invalid username/password; logon denied
+Help: https://docs.oracle.com/error-help/db/ora-01017/
+2026-09-03 18:45:49,990 | INFO | MainThread | __main__ | app.py:15  | Application Started
+2026-09-03 18:45:50,169 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Aomori pool OK
+2026-09-03 18:45:50,204 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Okayama pool OK
+2026-09-03 18:45:50,252 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Hakodate pool OK
+2026-09-03 18:45:50,307 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Iwate pool OK
+2026-09-03 18:45:50,355 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Shikoku pool OK
+2026-09-03 18:45:50,410 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Okinawa pool OK
+2026-09-03 18:45:50,456 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Wakayama pool OK
+2026-09-03 18:45:50,489 | INFO | MainThread | core.managers.connection_manager | connection_manager.py:99  | Chugoku pool OK
